@@ -8,9 +8,12 @@ interface JsonObject extends Record<string, JsonValue> { } // eslint-disable-lin
 
 type JsonCompatible<T> = {
     [P in keyof T]: T[P] extends JsonValue ?
-        T[P] : Pick<T, P> extends Required<Pick<T, P>> ?
-            never : T[P] extends (() => any) | undefined ? // eslint-disable-line @typescript-eslint/no-explicit-any
-                never : JsonCompatible<T[P]>;
+        T[P] :
+        Pick<T, P> extends Required<Pick<T, P>> ?
+            never :
+            T[P] extends (() => any) | undefined ? // eslint-disable-line @typescript-eslint/no-explicit-any
+                never :
+                JsonCompatible<T[P]>;
 };
 
 export {
