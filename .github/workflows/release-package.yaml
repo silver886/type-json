@@ -5,10 +5,13 @@ on:
     types:
       - released
   workflow_call:
+    secrets:
+      NPM:
+        required: true
 
 jobs:
-  publish:
-    name: Publish
+  publish-github:
+    name: Publish to GitHub Package Registry
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,7 +22,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2
         with:
-          node-version: 14
+          node-version: 16
           check-latest: true
       - name: Cache pnpm modules
         uses: actions/cache@v2
@@ -29,26 +32,53 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-
       - name: Clean install dependencies
-        uses: pnpm/action-setup@v2.0.1
+        uses: pnpm/action-setup@v2.2.1
         with:
-          version: 6.20.4
+          version: 6
           run_install: |
             args: [--frozen-lockfile]
-      - name: Setup Node.js environment for GitHub Package Registry
+      - name: Setup Node.js environment
         uses: actions/setup-node@v2
         with:
           scope: ${{github.repository_owner}}
           registry-url: https://npm.pkg.github.com/
-      - name: Publish package to GitHub Package Registry
-        run: pnpm publish --no-git-checks
+      - name: Publish package
+        run: pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      - name: Setup Node.js environment for npm
+
+  publish-npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          check-latest: true
+      - name: Cache pnpm modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-
+      - name: Clean install dependencies
+        uses: pnpm/action-setup@v2.2.1
+        with:
+          version: 6
+          run_install: |
+            args: [--frozen-lockfile]
+      - name: Setup Node.js environment
         uses: actions/setup-node@v2
         with:
           scope: ${{github.repository_owner}}
           registry-url: https://registry.npmjs.org/
-      - name: Publish package to npm
-        run: pnpm publish --no-git-checks
+      - name: Publish package
+        run: pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM}}
